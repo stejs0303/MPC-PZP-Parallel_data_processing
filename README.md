@@ -14,7 +14,7 @@ slovo a počet jeho výskytů, celkový počet slov po filtracích,
 grafu (použijte knihovnu Matplotlib),
 - všechny požadované výstupy vypište do konzole a výsledky srovnejte.
 
-# Budou vytvořeny 4 verze algoritmu:
+## Budou vytvořeny 4 verze algoritmu:
 1. CPU – jedno vláknový algoritmus
 2. CPU – více-vláknový algoritmus
 - Zpracovávejte paralelně datový soubor.
