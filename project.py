@@ -1,17 +1,19 @@
-from collected_data import Collected_data
-import cpu_singlethreaded
-import cpu_multithreaded
-import gpu_multithreaded
-import load as ld
+#Author: Jan Stejskal
+#ID: 211272
+#Python version: 3.10.7
+#Platform: Windows 11
+#Packages: requirements.txt
 
-single_thread: Collected_data
-multi_thread: Collected_data
-gpu: Collected_data
+from collected_data import Collected_data
+import cpu
+import gpu
+import load as ld
 
 def main():
     data, stop_words = ld.load("./files/data.txt", "./files/stop_words.txt")
     
-    single_thread = cpu_singlethreaded.single_thread(data, stop_words)
+    single_thread = cpu.single_threaded(data, stop_words)
+    multi_thread = cpu.multi_threaded(data, stop_words)
     
     print(single_thread)
     

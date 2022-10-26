@@ -1,7 +1,8 @@
 from collected_data import Collected_data 
+import threading
 import time
    
-def single_thread(data: list, stop_words: list):
+def single_threaded(data: list, stop_words: list):
     filtered_data = dict()
     counter: int = 0
     
@@ -21,3 +22,7 @@ def single_thread(data: list, stop_words: list):
     stop = time.time_ns()
     
     return Collected_data("CPU-singlethreaded", most_frequent, most_frequent_count, least_frequent, least_frequent_count, counter, start, stop)
+
+
+def multi_threaded(data: list, stop_words: list):
+    print("hello")
