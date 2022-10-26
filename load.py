@@ -13,6 +13,6 @@ def load(data_path: str, stop_words_path: str):
 
             if(not len(line)): break
 
-            data.extend([word for word in re.split(" |,|;|\n|\r|\.|\\|\*|\+|\?|\[|\]|\(|\)|\{|\}|\!|\:|\-\-|\-\-\-|_|\'|\"", line) if word ])
+            data.extend([word for word in re.split(" |,|;|\n|\r|\.|\\|\*|\+|\?|\[|\]|\(|\)|\{|\}|\!|\:|\-\-|\-\-\-|_|\'|\"", line) if word])
     
     return data, stop_words

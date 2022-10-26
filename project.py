@@ -1,4 +1,4 @@
-from data_struct import Collected_data
+from collected_data import Collected_data
 import cpu_singlethreaded
 import cpu_multithreaded
 import gpu_multithreaded

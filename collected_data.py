@@ -37,10 +37,10 @@ class Collected_data:
         Most frequent word: \"{self.most_frequent_word}\", appeared: {self.most_frequent_word_count} in the text.
         Least frequent word: \"{self.least_frequent_word}\", appeared: {self.least_frequent_word_count} in the text.
         Overall word count: {self.final_word_count}.
-        Execution time: {self.get_time()} s.
+        Execution time: {self.get_time()} ms.
         '''
         return string
 
     def get_time(self) -> float:
-        value = ((self.end_time - self.start_time)/int(1e9))
-        return value
+        #value = round((self.end_time - self.start_time)/int(1e6), 3)
+        return round((self.end_time - self.start_time)/int(1e6), 3)
