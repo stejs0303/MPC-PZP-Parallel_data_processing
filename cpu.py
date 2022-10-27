@@ -4,7 +4,10 @@ from collections import Counter
 from math import ceil
 import threading
 import time
-   
+
+MINIMUM_LETTERS: int = 4
+MAXIMUM_LETTERS: int = 8
+
 def single_threaded(data: list, stop_words: list):
     filtered_data: dict = {}
     counter: int = 0
@@ -12,10 +15,10 @@ def single_threaded(data: list, stop_words: list):
     start = time.time_ns()
     
     for word in data:
-        if len(word) >= 4 and len(word) <= 8 and word not in stop_words:
+        if len(word) >= MINIMUM_LETTERS and len(word) <= MAXIMUM_LETTERS and word not in stop_words:
             filtered_data[word] = filtered_data.get(word, 0) + 1
             counter += 1
-            
+                
     most_frequent_word = max(filtered_data, key=filtered_data.get)
     most_frequent_word_count = filtered_data.get(most_frequent_word)
     
@@ -39,7 +42,7 @@ def multi_threaded(data: list, stop_words: list):
     n_cores = cpu_count()
     step = ceil(len(data)/n_cores)
     for idx in range(0, len(data), step):
-        thread = CustomThread(data[idx:idx+step], stop_words.copy())   
+        thread = CustomThread(data[idx:idx+step], stop_words.copy())
         threads.append(thread)
     
     for thread in threads:
@@ -47,7 +50,7 @@ def multi_threaded(data: list, stop_words: list):
         
     for thread in threads:
         thread.join()
-        filtered_data += Counter(thread.filtered_data)
+        filtered_data += thread.filtered_data
         counter += thread.counter
     
     most_frequent_word = max(filtered_data, key=filtered_data.get)
@@ -64,7 +67,7 @@ def multi_threaded(data: list, stop_words: list):
 
 
 class CustomThread(threading.Thread):
-    filtered_data: dict
+    filtered_data: Counter
     stop_words: list
     counter: int
     data: list
@@ -72,12 +75,12 @@ class CustomThread(threading.Thread):
     def __init__(self, data: list, stop_words: list):
         threading.Thread.__init__(self)
         self.stop_words = stop_words
-        self.filtered_data = dict()
+        self.filtered_data = Counter()
         self.data = data
         self.counter = 0
         
     def run(self):
         for word in self.data:
-            if len(word) >= 4 and len(word) <= 8 and word not in self.stop_words:
+            if len(word) >= MINIMUM_LETTERS and len(word) <= MAXIMUM_LETTERS and word not in self.stop_words:
                 self.filtered_data[word] = self.filtered_data.get(word, 0) + 1
                 self.counter += 1

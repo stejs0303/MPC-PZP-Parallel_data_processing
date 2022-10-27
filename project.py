@@ -8,14 +8,19 @@ import load as ld
 import cpu
 import gpu
 
+data_path: str = "./files/data.txt"
+stop_words_path: str = "./files/stop_words.txt"
+
 def main():
-    data, stop_words = ld.load("./files/data.txt", "./files/stop_words.txt")
+    data, stop_words = ld.load(data_path, stop_words_path)
     
-    single_thread = cpu.single_threaded(data, stop_words)
-    multi_thread = cpu.multi_threaded(data, stop_words)
+    single_threaded = cpu.single_threaded(data, stop_words)
+    multi_threaded = cpu.multi_threaded(data, stop_words)
+    multi_threaded_gpu = gpu.multi_threaded(data, stop_words)
     
-    print(single_thread)
-    print(multi_thread)
+    print(single_threaded)
+    print(multi_threaded)
+    print(multi_threaded_gpu)
     
 if __name__ == "__main__":
     main()

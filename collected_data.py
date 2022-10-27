@@ -3,15 +3,11 @@ from math import inf
 class Collected_data:
     type: str
     threads: int
-    
     most_frequent_word: str
     most_frequent_word_count: int
-    
     least_frequent_word: str
     least_frequent_word_count: int
-    
     final_word_count: int
-    
     start_time: str
     end_time: str
     
@@ -32,15 +28,13 @@ class Collected_data:
         self.end_time = end_time
 
     def __repr__(self) -> str:
-        string = f'''
+        return f'''
         Processed on: {self.type}, number of threads: {self.threads}.
         Most frequent word: \"{self.most_frequent_word}\", appeared: {self.most_frequent_word_count} in the text.
         Least frequent word: \"{self.least_frequent_word}\", appeared: {self.least_frequent_word_count} in the text.
         Overall word count: {self.final_word_count}.
         Execution time: {self.get_time()} ms.
         '''
-        return string
 
     def get_time(self) -> float:
-        #value = round((self.end_time - self.start_time)/int(1e6), 3)
         return round((self.end_time - self.start_time)/int(1e6), 3)
