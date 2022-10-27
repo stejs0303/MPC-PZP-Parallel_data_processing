@@ -1,13 +1,12 @@
-#Author: Jan Stejskal
-#ID: 211272
-#Python version: 3.10.7
-#Platform: Windows 11
-#Packages: requirements.txt
+#Author:            Jan Stejskal
+#School ID:         211272
+#Python version:    3.10.7
+#Platform:          Windows 11
+#Packages:          requirements.txt
 
-from collected_data import Collected_data
+import load as ld
 import cpu
 import gpu
-import load as ld
 
 def main():
     data, stop_words = ld.load("./files/data.txt", "./files/stop_words.txt")
@@ -16,7 +15,7 @@ def main():
     multi_thread = cpu.multi_threaded(data, stop_words)
     
     print(single_thread)
+    print(multi_thread)
     
 if __name__ == "__main__":
     main()
-    
