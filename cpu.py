@@ -2,8 +2,10 @@ from collected_data import Collected_data
 from multiprocessing import cpu_count
 from collections import Counter
 from math import ceil
+from load import load
 import threading
 import time
+
 
 MINIMUM_LETTERS: int = 4
 MAXIMUM_LETTERS: int = 8
@@ -18,7 +20,9 @@ def single_threaded(data: list, stop_words: list):
         if len(word) >= MINIMUM_LETTERS and len(word) <= MAXIMUM_LETTERS and word not in stop_words:
             filtered_data[word] = filtered_data.get(word, 0) + 1
             counter += 1
-                
+          
+    filtered = time.time_ns()
+          
     most_frequent_word = max(filtered_data, key=filtered_data.get)
     most_frequent_word_count = filtered_data.get(most_frequent_word)
     
@@ -29,7 +33,8 @@ def single_threaded(data: list, stop_words: list):
     
     return Collected_data("CPU", 1, most_frequent_word, 
                           most_frequent_word_count, least_frequent_word, 
-                          least_frequent_word_count, counter, start, stop)
+                          least_frequent_word_count, counter, 
+                          start, start, start, filtered, stop)
 
 
 def multi_threaded(data: list, stop_words: list):
@@ -48,10 +53,14 @@ def multi_threaded(data: list, stop_words: list):
     for thread in threads:
         thread.start()
         
+    data_prepared = time.time_ns()
+    
     for thread in threads:
         thread.join()
         filtered_data += thread.filtered_data
         counter += thread.counter
+    
+    data_filtered = time.time_ns()
     
     most_frequent_word = max(filtered_data, key=filtered_data.get)
     most_frequent_word_count = filtered_data.get(most_frequent_word)
@@ -63,7 +72,8 @@ def multi_threaded(data: list, stop_words: list):
     
     return Collected_data("CPU", n_cores, most_frequent_word, 
                           most_frequent_word_count, least_frequent_word, 
-                          least_frequent_word_count, counter, start, stop)
+                          least_frequent_word_count, counter, 
+                          start, data_prepared, data_prepared, data_filtered, stop)
 
 
 class CustomThread(threading.Thread):
@@ -84,3 +94,8 @@ class CustomThread(threading.Thread):
             if len(word) >= MINIMUM_LETTERS and len(word) <= MAXIMUM_LETTERS and word not in self.stop_words:
                 self.filtered_data[word] = self.filtered_data.get(word, 0) + 1
                 self.counter += 1
+                
+if __name__=="__main__":
+    data, stop_words = load("./files/data.txt", "./files/stop_words.txt")
+    print(single_threaded(data, stop_words))
+    print(multi_threaded(data, stop_words))
