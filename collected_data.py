@@ -48,21 +48,21 @@ class Collected_data:
         Most frequent word: \"{self.most_frequent_word}\", appeared: {self.most_frequent_word_count} in the text.
         Least frequent word: \"{self.least_frequent_word}\", appeared: {self.least_frequent_word_count} in the text.
         Overall word count: {self.final_word_count}.
-        Measured times - Data preparation: {self.get_preparation_time()} ms,
-                         Memory manipulation: {self.get_memory_manipulation_time()} ms,
-                         Data processing: {self.get_processing_time()} ms,
-                         Execution time: {self.get_execution_time()} ms.'''
+        Measured times - Data preparation: {self._get_preparation_time()} ms,
+                         Memory manipulation: {self._get_memory_manipulation_time()} ms,
+                         Data processing: {self._get_processing_time()} ms,
+                         Execution time: {self._get_execution_time()} ms.'''
 
-    def get_preparation_time(self) -> float:
+    def _get_preparation_time(self) -> float:
         return round((self.prepared_time - self.start_time)/int(1e6), 2)
 
-    def get_memory_manipulation_time(self) -> float:
+    def _get_memory_manipulation_time(self) -> float:
         return round((self.memory_coppied_allocated_time - self.prepared_time)/int(1e6), 2)
     
-    def get_processing_time(self) -> float:
+    def _get_processing_time(self) -> float:
         return round((self.filtered_time - self.memory_coppied_allocated_time)/int(1e6) - self._get_compilation_time(), 4)
     
-    def get_execution_time(self) -> float:
+    def _get_execution_time(self) -> float:
         return round((self.stop_time - self.start_time)/int(1e6) - self._get_compilation_time(), 2)
     
     def _get_compilation_time(self) -> float:

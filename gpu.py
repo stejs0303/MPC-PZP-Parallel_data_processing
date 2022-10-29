@@ -17,8 +17,8 @@ def multi_threaded(data: list, stop_words: list):
     word_to_number: dict = {}
     number_to_word: dict = {}
     filtered_data: dict = {}
-    encoded_stop_words: list = []
     encoded_words: list = []
+    encoded_stop_words: list = []
     
     start = time.time_ns()
     
