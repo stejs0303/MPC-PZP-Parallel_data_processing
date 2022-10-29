@@ -43,7 +43,7 @@ class Collected_data:
         self.compiling_stop_time = compiling_stop_time
 
     def __repr__(self) -> str:
-        return f'''
+        repr =  f'''
         Processed on: {self.type}, number of threads: {self.threads}.
         Most frequent word: \"{self.most_frequent_word}\", appeared: {self.most_frequent_word_count} in the text.
         Least frequent word: \"{self.least_frequent_word}\", appeared: {self.least_frequent_word_count} in the text.
@@ -52,6 +52,7 @@ class Collected_data:
                          Memory manipulation: {self._get_memory_manipulation_time()} ms,
                          Data processing: {self._get_processing_time()} ms,
                          Execution time: {self._get_execution_time()} ms.'''
+        return repr
 
     def _get_preparation_time(self) -> float:
         return round((self.prepared_time - self.start_time)/int(1e6), 2)

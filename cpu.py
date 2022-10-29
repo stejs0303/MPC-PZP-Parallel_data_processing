@@ -6,7 +6,6 @@ from load import load
 import threading
 import time
 
-
 MINIMUM_LETTERS: int = 4
 MAXIMUM_LETTERS: int = 8
 
@@ -57,6 +56,8 @@ def multi_threaded(data: list, stop_words: list):
     
     for thread in threads:
         thread.join()
+        
+    for thread in threads:
         filtered_data += thread.filtered_data
         counter += thread.counter
     

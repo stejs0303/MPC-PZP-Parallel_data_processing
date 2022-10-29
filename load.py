@@ -5,13 +5,16 @@ def load(data_path: str, stop_words_path: str):
     
     data, stop_words = [], []
 
-    with open(data_path, 'r') as file:
-            file_data = file.read()
-            data.append([word for word in re.split(" |,|;|\n|\r|\.|\\|\*|\+|\?|\[|\]|\(|\)|\{|\}|\!|\:|\-\-|\-\-\-|_|\'|\"", file_data) if word])
+    with open(data_path, 'r') as file_data:
+        while(True):
+            line = file_data.readline()
+
+            if(not len(line)): break
+
+            data.extend([word for word in re.split(" |,|;|\n|\r|\.|\\|\*|\+|\?|\[|\]|\(|\)|\{|\}|\!|\:|\-\-|\-\-\-|_|\'|\"", line) if word])
     
-    with open(stop_words_path, 'r') as file:
-        file_stop_words = file.read()
-        stop_words.append([word.strip(" \n\r") for word in file_stop_words])
+    with open(stop_words_path, 'r') as file_stop_words:
+        stop_words = [word.strip(" \n\r") for word in file_stop_words.readlines()]
     
     return data, stop_words
 
