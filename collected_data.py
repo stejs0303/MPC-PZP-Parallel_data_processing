@@ -10,13 +10,10 @@ class Collected_data:
     least_frequent_word_count: int
     final_word_count: int
     
-    start_time: int
-    prepared_time: int
-    memory_coppied_allocated_time: int
-    compiling_start_time: int
-    compiling_stop_time: int
-    filtered_time: int
-    stop_time: int
+    preparation_time: int
+    memory_manipulation_time: int
+    processing_time: int
+    execution_time: int
     
     def __init__(self, type:str = "", threads: int = 0,
                  most_frequent_word: str = "", most_frequent_word_count: int = 0, 
@@ -34,13 +31,32 @@ class Collected_data:
         self.least_frequent_word_count = least_frequent_word_count
         self.final_word_count = final_word_count
         
-        self.start_time = start_time
-        self.prepared_time = prepared_time
-        self.memory_coppied_allocated_time = memory_coppied_allocated_time
-        self.filtered_time = filtered_time
-        self.stop_time = stop_time
-        self.compiling_start_time = compiling_start_time
-        self.compiling_stop_time = compiling_stop_time
+        self.preparation_time = round((prepared_time - start_time)/int(1e6), 2)
+        
+        self.memory_manipulation_time = round((memory_coppied_allocated_time - prepared_time)/int(1e6), 2)
+        
+        self.processing_time = round(((filtered_time - memory_coppied_allocated_time) - 
+                                      (compiling_stop_time - compiling_start_time)) / int(1e6), 4)
+        
+        self.execution_time = round(((stop_time - start_time) - 
+                                     (compiling_stop_time - compiling_start_time)) / int(1e6), 2)
+
+    def __iadd__(self, other):
+        self.type = other.type
+        self.threads = other.threads
+        
+        self.most_frequent_word = other.most_frequent_word
+        self.most_frequent_word_count = other.most_frequent_word_count
+        self.least_frequent_word = other.least_frequent_word
+        self.least_frequent_word_count = other.least_frequent_word_count
+        self.final_word_count = other.final_word_count
+        
+        self.preparation_time = round((self.preparation_time + other.preparation_time) / 2, 2)
+        self.memory_manipulation_time = round((self.memory_manipulation_time + other.memory_manipulation_time) / 2, 2)
+        self.processing_time = round((self.processing_time + other.processing_time) / 2, 4)
+        self.execution_time = round((self.execution_time + other.execution_time) / 2, 2)
+        
+        return self
 
     def __repr__(self) -> str:
         repr =  f'''
@@ -48,24 +64,8 @@ class Collected_data:
         Most frequent word: \"{self.most_frequent_word}\", appeared: {self.most_frequent_word_count} in the text.
         Least frequent word: \"{self.least_frequent_word}\", appeared: {self.least_frequent_word_count} in the text.
         Overall word count: {self.final_word_count}.
-        Measured times - Data preparation: {self._get_preparation_time()} ms,
-                         Memory manipulation: {self._get_memory_manipulation_time()} ms,
-                         Data processing: {self._get_processing_time()} ms,
-                         Execution time: {self._get_execution_time()} ms.'''
+        Measured times - Data preparation: {self.preparation_time} ms,
+                         Memory manipulation: {self.memory_manipulation_time} ms,
+                         Data processing: {self.processing_time} ms,
+                         Execution time: {self.execution_time} ms.'''
         return repr
-
-    def _get_preparation_time(self) -> float:
-        return round((self.prepared_time - self.start_time)/int(1e6), 2)
-
-    def _get_memory_manipulation_time(self) -> float:
-        return round((self.memory_coppied_allocated_time - self.prepared_time)/int(1e6), 2)
-    
-    def _get_processing_time(self) -> float:
-        return round((self.filtered_time - self.memory_coppied_allocated_time)/int(1e6) - self._get_compilation_time(), 4)
-    
-    def _get_execution_time(self) -> float:
-        return round((self.stop_time - self.start_time)/int(1e6) - self._get_compilation_time(), 2)
-    
-    def _get_compilation_time(self) -> float:
-        return ((self.compiling_stop_time - self.compiling_start_time)/int(1e6))
-    

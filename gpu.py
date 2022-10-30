@@ -1,7 +1,7 @@
 from collected_data import Collected_data
 from pycuda.compiler import SourceModule
 import pycuda.driver as cuda_driver
-from math import ceil
+from math import ceil, inf
 from load import load
 import numpy as np
 import time
@@ -16,7 +16,6 @@ def multi_threaded(data: list, stop_words: list):
 
     word_to_number: dict = {}
     number_to_word: dict = {}
-    filtered_data: dict = {}
     encoded_words: list = []
     encoded_stop_words: list = []
     
@@ -39,20 +38,19 @@ def multi_threaded(data: list, stop_words: list):
     
     data_prepared = time.time_ns()
     
-    encoded_stop_words: np.ndarray = np.array(encoded_stop_words).astype(np.int32)
     encoded_words: np.ndarray = np.array(encoded_words).astype(np.int32)
-    filtered_data_numbers: np.ndarray = np.zeros(len(encoded_words)).astype(np.int32)
-    filtered_data_info: np.ndarray = np.array([0, 0, 10000, 10000, 0]).astype(np.int32)
-    # 0.most_frequent_word, 1.most_frequent_word_count, 2.least_frequent_word, 3.least_frequent_word_count, 4.counter
+    encoded_stop_words: np.ndarray = np.array(encoded_stop_words).astype(np.int32)
+    filtered_data_encoded: np.ndarray = np.zeros(len(encoded_words)).astype(np.int32)
+    histogram: np.ndarray = np.zeros(len(word_to_number)).astype(np.int32)
     
     data_gpu = cuda_driver.mem_alloc_like(encoded_words)
     stop_words_gpu = cuda_driver.mem_alloc_like(encoded_stop_words)
-    filtered_data_gpu = cuda_driver.mem_alloc_like(filtered_data_numbers)
-    filtered_data_info_gpu = cuda_driver.mem_alloc_like(filtered_data_info)
+    filtered_data_gpu = cuda_driver.mem_alloc_like(filtered_data_encoded)
+    histogram_gpu = cuda_driver.mem_alloc_like(histogram)
 
     cuda_driver.memcpy_htod(stop_words_gpu, encoded_stop_words)
     cuda_driver.memcpy_htod(data_gpu, encoded_words)
-    cuda_driver.memcpy_htod(filtered_data_info_gpu, filtered_data_info)
+    cuda_driver.memcpy_htod(histogram_gpu, histogram)
     
     memory_coppied_allocated = time.time_ns()
     
@@ -61,62 +59,61 @@ def multi_threaded(data: list, stop_words: list):
     
     compiling_start = time.time_ns()
     
-    kernel = SourceModule(get_kernel(BLOCK_SIZE, len(encoded_words), len(encoded_stop_words)))
-    run = kernel.get_function("filter_data")
+    kernel = SourceModule(get_kernel(BLOCK_SIZE, len(encoded_words), len(encoded_stop_words), len(word_to_number)))
     
     compiling_stop = time.time_ns()
     
-    try:
-        run(data_gpu, stop_words_gpu, filtered_data_gpu, 
-            filtered_data_info_gpu, np.int32(word_to_number.get("")), 
-            block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
-    except:
-        stop_words_gpu.free()
-        data_gpu.free()
-        filtered_data_gpu.free()
-        filtered_data_info_gpu.free()
-        ctx.pop()
-        exit(-1)
+    run = kernel.get_function("filter_data")  
+    run(data_gpu, stop_words_gpu, filtered_data_gpu, 
+        np.int32(word_to_number.get("")), 
+        block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
         
     ctx.synchronize()
     
-    cuda_driver.memcpy_dtoh(filtered_data_numbers, filtered_data_gpu)
-    cuda_driver.memcpy_dtoh(filtered_data_info, filtered_data_info_gpu)
+    run = kernel.get_function("create_histogram") 
+    run(filtered_data_gpu, histogram_gpu, 
+        np.int32(word_to_number.get("")), 
+        block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
     
+    ctx.synchronize()
     data_filtered = time.time_ns()
+
+    cuda_driver.memcpy_dtoh(histogram, histogram_gpu)
     
-    for number in filtered_data_numbers:
-        filtered_data[number_to_word[number]] = filtered_data.get(number_to_word[number], 0) + 1
-    
-    filtered_data.pop("")
-    
-    most_frequent_word = max(filtered_data, key=filtered_data.get)
-    most_frequent_word_count = filtered_data.get(most_frequent_word)
-    
-    least_frequent_word = min(filtered_data, key=filtered_data.get)
-    least_frequent_word_count = filtered_data.get(least_frequent_word)
+    most_frequent_word_count = 0
+    most_frequent_word = 0
+    least_frequent_word_count = inf
+    least_frequent_word = 0
+    counter = 0
+    for word, num_of_occurences in enumerate(histogram):
+        if most_frequent_word_count < num_of_occurences:
+            most_frequent_word_count = num_of_occurences
+            most_frequent_word = word
+        elif least_frequent_word_count > num_of_occurences and num_of_occurences != 0:
+            least_frequent_word_count = num_of_occurences
+            least_frequent_word = word
+        counter += num_of_occurences
     
     stop = time.time_ns()
     
     stop_words_gpu.free()
     data_gpu.free()
+    histogram_gpu.free()
     filtered_data_gpu.free()
-    filtered_data_info_gpu.free()
     
     ctx.pop()
     
-    return Collected_data("GPU", f"{BLOCK_SIZE} per block", most_frequent_word, 
-                          most_frequent_word_count, least_frequent_word, 
-                          least_frequent_word_count, filtered_data_info[4], 
+    return Collected_data("GPU", f"{BLOCK_SIZE} per block", 
+                          number_to_word[most_frequent_word], most_frequent_word_count, 
+                          number_to_word[least_frequent_word], least_frequent_word_count, counter, 
                           start, data_prepared, memory_coppied_allocated, data_filtered, stop,
                           compiling_start, compiling_stop)
                           
-def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int):
+def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int, UNIQUE_WORDS: int):
     
     kernel = '''
-    __global__ void filter_data(int* in_data, int* in_stop_words, int* out_filtered_data, int* info, int empty_string)
+    __global__ void filter_data(int* in_data, int* in_stop_words, int* out_filtered_data, int empty_string)
     {   
-        __shared__ int s_counter;
         __shared__ int s_stop_words[STOP_WORDS_LENGTH];
         __shared__ int s_data[BLOCK_SIZE];
 
@@ -124,32 +121,56 @@ def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int):
      
         if(idx < DATA_LENGTH)
         {
-            if(threadIdx.x == 0) s_counter = 0;
             if(threadIdx.x < STOP_WORDS_LENGTH) s_stop_words[threadIdx.x] = in_stop_words[threadIdx.x];
             s_data[threadIdx.x] = in_data[idx];
             
-            __syncthreads();   
+            __syncthreads();
             
             int l_word = s_data[threadIdx.x];
-            int l_initial = l_word;
             for(int i = 0; i < STOP_WORDS_LENGTH; i++)
                 l_word = l_word + (l_word == s_stop_words[i]) * (empty_string - l_word);
-            
-            s_data[threadIdx.x] = l_word;
-            
-            atomicAdd(&s_counter, (l_initial == l_word));
-            
-            out_filtered_data[idx] = s_data[threadIdx.x];
-            
-            __syncthreads();          
-            if(threadIdx.x == 0) atomicAdd(&info[4], s_counter);
+                 
+            out_filtered_data[idx] = l_word;
         }    
+    }
+    
+    __global__ void create_histogram(int* in_filtered_data, int* out_histogram, int empty_string)
+    {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;      
+        int s_filtered_data[BLOCK_SIZE];
+
+        if(idx < DATA_LENGTH)
+        {
+            s_filtered_data[threadIdx.x] = in_filtered_data[idx];
+            //__syncthreads();
+            
+            int l_word = s_filtered_data[threadIdx.x];
+            atomicAdd(&out_histogram[l_word], (l_word != empty_string));
+        }
+    }
+    '''
+    
+    
+    '''
+    __global__ void min_max(int* in_histogram, int* info)
+    {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        
+        if(idx < UNIQUE_WORDS)
+        {
+            // 0.most_frequent_word, 1.most_frequent_word_count, 2.least_frequent_word, 3.least_frequent_word_count, 4.counter
+            atomicExch(&info[0], info[0] + (in_histogram[idx] > info[1]) * (idx - info[0]));
+            atomicExch(&info[1], info[1] + (in_histogram[idx] > info[1]) * (in_histogram[idx] - info[1]));
+            atomicExch(&info[2], info[2] + (in_histogram[idx] < info[3] && in_histogram[idx] != 0) * (idx - info[2]));
+            atomicExch(&info[3], info[3] + (in_histogram[idx] < info[3] && in_histogram[idx] != 0) * (in_histogram[idx] - info[3]));
+        }
     }
     '''
     
     kernel = kernel.replace("BLOCK_SIZE", str(BLOCK_SIZE))
     kernel = kernel.replace("DATA_LENGTH", str(DATA_LENGTH))
     kernel = kernel.replace("STOP_WORDS_LENGTH", str(STOP_WORDS_LENGTH))
+    kernel = kernel.replace("UNIQUE_WORDS", str(UNIQUE_WORDS))
     return kernel
 
 if __name__=="__main__":

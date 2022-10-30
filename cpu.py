@@ -45,13 +45,14 @@ def multi_threaded(data: list, stop_words: list):
     
     n_cores = cpu_count()
     step = ceil(len(data)/n_cores)
+    
     for idx in range(0, len(data), step):
         thread = CustomThread(data[idx:idx+step], stop_words.copy())
         threads.append(thread)
     
     for thread in threads:
         thread.start()
-        
+
     data_prepared = time.time_ns()
     
     for thread in threads:
