@@ -23,7 +23,6 @@ def multi_threaded(data: list, stop_words: list):
     
     for idx, stop_word in enumerate(stop_words):
         encoded_stop_words.append(idx)
-        
         word_to_number[stop_word] = word_to_number.get(stop_word, int(len(word_to_number)))
     
     for word in data:
@@ -31,8 +30,7 @@ def multi_threaded(data: list, stop_words: list):
             word_to_number[word] = word_to_number.get(word, int(len(word_to_number)))
             number_to_word[word_to_number.get(word)] = word_to_number.get(word_to_number.get(word), word)
             encoded_words.append(word_to_number.get(word))
-    
-    #Add empty character to replace stop words with
+            
     word_to_number[""] = word_to_number.get("", int(len(word_to_number)))
     number_to_word[word_to_number.get("")] = word_to_number.get(word_to_number.get(""), "")
     
@@ -41,15 +39,18 @@ def multi_threaded(data: list, stop_words: list):
     encoded_words: np.ndarray = np.array(encoded_words).astype(np.int32)
     encoded_stop_words: np.ndarray = np.array(encoded_stop_words).astype(np.int32)
     filtered_data_encoded: np.ndarray = np.zeros(len(encoded_words)).astype(np.int32)
+    #data_info: np.ndarray = np.array([0, 0, 10000, 10000, 0]).astype(np.int32)
     histogram: np.ndarray = np.zeros(len(word_to_number)).astype(np.int32)
     
     data_gpu = cuda_driver.mem_alloc_like(encoded_words)
     stop_words_gpu = cuda_driver.mem_alloc_like(encoded_stop_words)
     filtered_data_gpu = cuda_driver.mem_alloc_like(filtered_data_encoded)
+    #data_info_gpu = cuda_driver.mem_alloc_like(data_info)
     histogram_gpu = cuda_driver.mem_alloc_like(histogram)
 
     cuda_driver.memcpy_htod(stop_words_gpu, encoded_stop_words)
     cuda_driver.memcpy_htod(data_gpu, encoded_words)
+    #cuda_driver.memcpy_htod(data_info_gpu, data_info)
     cuda_driver.memcpy_htod(histogram_gpu, histogram)
     
     memory_coppied_allocated = time.time_ns()
@@ -60,7 +61,7 @@ def multi_threaded(data: list, stop_words: list):
     compiling_start = time.time_ns()
     
     kernel = SourceModule(get_kernel(BLOCK_SIZE, len(encoded_words), len(encoded_stop_words), len(word_to_number)))
-    
+
     compiling_stop = time.time_ns()
     
     run = kernel.get_function("filter_data")  
@@ -76,6 +77,11 @@ def multi_threaded(data: list, stop_words: list):
         block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
     
     ctx.synchronize()
+    
+    #run = kernel.get_function("get_info")
+    #run(histogram_gpu, data_info_gpu,
+    #    block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
+
     data_filtered = time.time_ns()
 
     cuda_driver.memcpy_dtoh(histogram, histogram_gpu)
@@ -93,7 +99,7 @@ def multi_threaded(data: list, stop_words: list):
             least_frequent_word_count = num_of_occurences
             least_frequent_word = word
         counter += num_of_occurences
-    
+
     stop = time.time_ns()
     
     stop_words_gpu.free()
@@ -148,22 +154,39 @@ def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int, UNIQUE
             atomicAdd(&out_histogram[l_word], (l_word != empty_string));
         }
     }
-    '''
     
-    
-    '''
-    __global__ void min_max(int* in_histogram, int* info)
+    __global__ void get_info(int* in_histogram, int* info)
     {
+        __shared__ int s_histogram[BLOCK_SIZE];
+        __shared__ int s_counter;
+        
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         
         if(idx < UNIQUE_WORDS)
         {
-            // 0.most_frequent_word, 1.most_frequent_word_count, 2.least_frequent_word, 3.least_frequent_word_count, 4.counter
-            atomicExch(&info[0], info[0] + (in_histogram[idx] > info[1]) * (idx - info[0]));
-            atomicExch(&info[1], info[1] + (in_histogram[idx] > info[1]) * (in_histogram[idx] - info[1]));
-            atomicExch(&info[2], info[2] + (in_histogram[idx] < info[3] && in_histogram[idx] != 0) * (idx - info[2]));
-            atomicExch(&info[3], info[3] + (in_histogram[idx] < info[3] && in_histogram[idx] != 0) * (in_histogram[idx] - info[3]));
-        }
+            s_histogram[threadIdx.x] = in_histogram[idx];
+            if(threadIdx.x == 0) s_counter = 0;
+            
+            __syncthreads();
+            
+            atomicMax(&info[1], s_histogram[threadIdx.x]);
+            atomicMin(&info[3], s_histogram[threadIdx.x] + (s_histogram[threadIdx.x] == 0) * 1000);
+            atomicAdd(&s_counter, s_histogram[threadIdx.x]);
+    
+            __syncthreads();
+        
+            if(idx == 0)
+            {
+                info[0] = info[1];
+                info[2] = info[3];
+            }
+            __syncthreads();
+            
+            atomicCAS(&info[0], s_histogram[threadIdx.x], idx);
+            atomicCAS(&info[2], s_histogram[threadIdx.x], idx);
+            
+            if(threadIdx.x == 0) atomicAdd(&info[4], s_counter);
+        }      
     }
     '''
     
@@ -171,6 +194,7 @@ def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int, UNIQUE
     kernel = kernel.replace("DATA_LENGTH", str(DATA_LENGTH))
     kernel = kernel.replace("STOP_WORDS_LENGTH", str(STOP_WORDS_LENGTH))
     kernel = kernel.replace("UNIQUE_WORDS", str(UNIQUE_WORDS))
+    
     return kernel
 
 if __name__=="__main__":
