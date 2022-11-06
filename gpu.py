@@ -19,7 +19,7 @@ def multi_threaded(data: list, stop_words: list):
     encoded_words: list = []
     encoded_stop_words: list = []
     
-    start = time.time_ns()
+    start = time.perf_counter()
     
     for idx, stop_word in enumerate(stop_words):
         encoded_stop_words.append(idx)
@@ -34,7 +34,7 @@ def multi_threaded(data: list, stop_words: list):
     word_to_number[""] = word_to_number.get("", int(len(word_to_number)))
     number_to_word[word_to_number.get("")] = word_to_number.get(word_to_number.get(""), "")
     
-    data_prepared = time.time_ns()
+    data_prepared = time.perf_counter()
     
     encoded_words: np.ndarray = np.array(encoded_words).astype(np.int32)
     encoded_stop_words: np.ndarray = np.array(encoded_stop_words).astype(np.int32)
@@ -53,16 +53,16 @@ def multi_threaded(data: list, stop_words: list):
     #cuda_driver.memcpy_htod(data_info_gpu, data_info)
     cuda_driver.memcpy_htod(histogram_gpu, histogram)
     
-    memory_coppied_allocated = time.time_ns()
+    memory_coppied_allocated = time.perf_counter()
     
     BLOCK_SIZE = 1024
     GRID_DIM = ceil(len(encoded_words)/BLOCK_SIZE)
     
-    compiling_start = time.time_ns()
+    compiling_start = time.perf_counter()
     
     kernel = SourceModule(get_kernel(BLOCK_SIZE, len(encoded_words), len(encoded_stop_words), len(word_to_number)))
 
-    compiling_stop = time.time_ns()
+    compiling_stop = time.perf_counter()
     
     run = kernel.get_function("filter_data")  
     run(data_gpu, stop_words_gpu, filtered_data_gpu, 
@@ -82,14 +82,12 @@ def multi_threaded(data: list, stop_words: list):
     #run(histogram_gpu, data_info_gpu,
     #    block=(BLOCK_SIZE, 1, 1), grid=(GRID_DIM, 1, 1))
 
-    data_filtered = time.time_ns()
-
     cuda_driver.memcpy_dtoh(histogram, histogram_gpu)
+
+    data_filtered = time.perf_counter()
     
-    most_frequent_word_count = 0
-    most_frequent_word = 0
-    least_frequent_word_count = inf
-    least_frequent_word = 0
+    most_frequent_word_count, most_frequent_word = 0, 0
+    least_frequent_word_count, least_frequent_word = inf, 0
     counter = 0
     for word, num_of_occurences in enumerate(histogram):
         if most_frequent_word_count < num_of_occurences:
@@ -100,7 +98,7 @@ def multi_threaded(data: list, stop_words: list):
             least_frequent_word = word
         counter += num_of_occurences
 
-    stop = time.time_ns()
+    stop = time.perf_counter()
     
     stop_words_gpu.free()
     data_gpu.free()
@@ -134,7 +132,7 @@ def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int, UNIQUE
             
             int l_word = s_data[threadIdx.x];
             for(int i = 0; i < STOP_WORDS_LENGTH; i++)
-                l_word = l_word + (l_word == s_stop_words[i]) * (empty_string - l_word);
+                l_word = l_word + (empty_string - l_word) * (l_word == s_stop_words[i]);
                  
             out_filtered_data[idx] = l_word;
         }    

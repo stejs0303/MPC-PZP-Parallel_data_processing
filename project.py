@@ -30,7 +30,7 @@ def main():
     print(multi_threaded)
     print(multi_threaded_gpu)
     
-    show_graph(single_threaded, multi_threaded, multi_threaded_gpu)
+    show_graph(single_threaded, multi_threaded, multi_threaded_gpu) 
     
 if __name__ == "__main__":
     main()

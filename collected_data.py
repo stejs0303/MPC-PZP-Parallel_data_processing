@@ -31,15 +31,15 @@ class Collected_data:
         self.least_frequent_word_count = least_frequent_word_count
         self.final_word_count = final_word_count
         
-        self.preparation_time = round((prepared_time - start_time)/int(1e6), 2)
+        self.preparation_time = round((prepared_time - start_time)*1000, 3)
         
-        self.memory_manipulation_time = round((memory_coppied_allocated_time - prepared_time)/int(1e6), 2)
+        self.memory_manipulation_time = round((memory_coppied_allocated_time - prepared_time)*1000, 3)
         
         self.processing_time = round(((filtered_time - memory_coppied_allocated_time) - 
-                                      (compiling_stop_time - compiling_start_time)) / int(1e6), 4)
+                                      (compiling_stop_time - compiling_start_time))*1000, 3)
         
         self.execution_time = round(((stop_time - start_time) - 
-                                     (compiling_stop_time - compiling_start_time)) / int(1e6), 2)
+                                     (compiling_stop_time - compiling_start_time))*1000, 3)
 
     def __iadd__(self, other):
         self.type = other.type
