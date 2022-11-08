@@ -1,6 +1,5 @@
 from collected_data import Collected_data 
-from multiprocessing import cpu_count, Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing import cpu_count
 from collections import Counter
 from math import ceil
 from load import load

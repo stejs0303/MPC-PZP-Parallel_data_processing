@@ -6,26 +6,27 @@ import numpy as np
 
 def show_graph(*collected_data_list: Collected_data):
     names: list = []
-    sub_names: list = ["other", "processing",
-                       "other", "processing", "data preparation",
-                       "other", "processing", "data preparation", "memory manipulation"]
+    sub_names: list = ["processing", "other",
+                       "processing", "data preparation", "other",
+                       "memory manipulation", "processing", "data preparation", "other"]
     execution_times: list = []
     sub_times: list = []
     sum: int = 0
 
     for collected_data in collected_data_list:
         names.append(f"{collected_data.type}, threads: {collected_data.threads}")
-    
-        sub_times.append(collected_data.execution_time - collected_data.processing_time - 
-                     collected_data.preparation_time - collected_data.memory_manipulation_time)
         
+        if collected_data.memory_manipulation_time != 0:
+            sub_times.append(collected_data.memory_manipulation_time)
+    
         sub_times.append(collected_data.processing_time)
         
         if collected_data.preparation_time != 0:
             sub_times.append(collected_data.preparation_time)
-        if collected_data.memory_manipulation_time != 0:
-            sub_times.append(collected_data.memory_manipulation_time)
         
+        sub_times.append(collected_data.execution_time - collected_data.processing_time - 
+                     collected_data.preparation_time - collected_data.memory_manipulation_time)
+            
         execution_times.append(collected_data.execution_time)
     
     plt.rcParams["figure.figsize"] = [9.50, 6]
@@ -36,13 +37,13 @@ def show_graph(*collected_data_list: Collected_data):
     size = 0.3
    
     cmap = plt.get_cmap("tab20c")
-    outer_colors = cmap(np.arange(3)*4)
-    inner_colors = cmap(np.array([19, 1, 19, 5, 6, 19, 9, 10, 11]))
+    inner_colors = cmap(np.arange(3)*4)
+    outer_colors = cmap(np.array([1, 19, 5, 6, 19, 11, 9, 10, 19]))
 
-    wedges, _ = ax.pie(sub_times,  radius=1, colors=inner_colors,
+    wedges, _ = ax.pie(sub_times,  radius=1, colors=outer_colors,
            wedgeprops=dict(width=size, edgecolor='w'))
     
-    ax.pie(execution_times, labels=names, radius=1-size, colors=outer_colors,
+    ax.pie(execution_times, labels=names, radius=1-size, colors=inner_colors,
            wedgeprops=dict(width=size, edgecolor='w'))
     
     bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
