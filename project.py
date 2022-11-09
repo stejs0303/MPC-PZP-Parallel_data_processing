@@ -7,7 +7,7 @@
 from collected_data import Collected_data
 from create_graph import show_graph
 from load import load
-import cpu, gpu
+import cpu, gpu, apache_spark
 
 data_path: str = "./files/data.txt"
 stop_words_path: str = "./files/stop_words.txt"
@@ -18,6 +18,7 @@ def main():
     single_threaded: Collected_data() = cpu.single_threaded(data, stop_words)
     multi_threaded: Collected_data() = cpu.multi_threaded(data, stop_words)
     multi_threaded_gpu: Collected_data() = gpu.multi_threaded(data, stop_words)
+    spark: Collected_data() = apache_spark.spark(data, stop_words)
     
     '''
     for _ in range(10):  
@@ -26,9 +27,12 @@ def main():
         multi_threaded_gpu += gpu.multi_threaded(data, stop_words)
     '''
     
+    print("\n\n\n")
     print(single_threaded)
     print(multi_threaded)
     print(multi_threaded_gpu)
+    print(spark)
+    print("\n\n\n")
     
     show_graph(single_threaded, multi_threaded, multi_threaded_gpu) 
     
