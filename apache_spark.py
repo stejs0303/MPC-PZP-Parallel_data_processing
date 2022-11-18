@@ -41,7 +41,6 @@ def spark(data: list, stop_words: list):
     stop = time.perf_counter()
     
     sc.stop()
-    
     return Collected_data("Apache Spark", 12, most_frequent_word, most_frequent_word_count, 
                           least_frequent_word, least_frequent_word_count, counter, 
                           start, start, time_memory_manip, time_data_filtered, stop)

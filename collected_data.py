@@ -51,10 +51,10 @@ class Collected_data:
         self.least_frequent_word_count = other.least_frequent_word_count
         self.final_word_count = other.final_word_count
         
-        self.preparation_time = round((self.preparation_time + other.preparation_time) / 2, 2)
-        self.memory_manipulation_time = round((self.memory_manipulation_time + other.memory_manipulation_time) / 2, 2)
-        self.processing_time = round((self.processing_time + other.processing_time) / 2, 4)
-        self.execution_time = round((self.execution_time + other.execution_time) / 2, 2)
+        self.preparation_time = round((self.preparation_time + other.preparation_time) / 2, 3)
+        self.memory_manipulation_time = round((self.memory_manipulation_time + other.memory_manipulation_time) / 2, 3)
+        self.processing_time = round((self.processing_time + other.processing_time) / 2, 3)
+        self.execution_time = round((self.execution_time + other.execution_time) / 2, 3)
         
         return self
 

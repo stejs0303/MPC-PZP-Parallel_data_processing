@@ -141,7 +141,8 @@ def get_kernel(BLOCK_SIZE: int, DATA_LENGTH: int, STOP_WORDS_LENGTH: int, UNIQUE
     __global__ void create_histogram(int* in_filtered_data, int* out_histogram, int empty_string)
     {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;      
-        int s_filtered_data[BLOCK_SIZE];
+        
+        __shared__ int s_filtered_data[BLOCK_SIZE];
 
         if(idx < DATA_LENGTH)
         {
