@@ -27,15 +27,15 @@ def spark(data: list, stop_words: list):
     
     time_memory_manip = time.perf_counter()
     
-    spark_filtered_data = spark_data.filter(lambda word: len(word) >= 4 and len(word) <= 8 and word not in stop_words)
+    spark_filtered_data = spark_data.filter(lambda word: (len(word) >= 4 and len(word) <= 8 and word not in stop_words))
     spark_pairs = spark_filtered_data.map(lambda word: (word, 1))
     spark_dict = spark_pairs.reduceByKey(add)
     
     time_data_filtered = time.perf_counter()
     
     most_frequent_word, most_frequent_word_count = spark_dict.takeOrdered(1, key=lambda x: -x[1])[0]
-    least_frequent_word, least_frequent_word_count = spark_dict.takeOrdered(1)[0]
-
+    least_frequent_word, least_frequent_word_count = spark_dict.takeOrdered(1, key=lambda x: x[1])[0]
+    
     counter = spark_filtered_data.count()
     
     stop = time.perf_counter()
