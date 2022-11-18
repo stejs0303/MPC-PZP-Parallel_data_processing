@@ -16,7 +16,7 @@ def main():
     data, stop_words = load(data_path, stop_words_path)
     
     single_threaded: Collected_data() = cpu.single_threaded(data, stop_words)
-    multi_threaded: Collected_data() = cpu.multi_threaded(data, stop_words)
+    multi_threaded: Collected_data() = cpu.multi_threaded_threading(data, stop_words)
     multi_threaded_gpu: Collected_data() = gpu.multi_threaded(data, stop_words)
     spark: Collected_data() = apache_spark.spark(data, stop_words)
     
