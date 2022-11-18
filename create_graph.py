@@ -60,7 +60,7 @@ def show_graph(*collected_data_list: Collected_data):
         ax.annotate(sub_names[i], xy=(x, y), xytext=(1.35*np.sign(x), 1.4*y),
                     horizontalalignment=horizontalalignment, **kw)
     
-    ax.set(aspect="equal", title='Pie plot with `ax.pie`')
+    ax.set(aspect="equal", title='Execution time chart')
     
     plt.show()
         
