@@ -16,7 +16,7 @@ def load(data_path: str, stop_words_path: str):
         while(True):
             line = file_data.readline()
 
-            if(not len(line)): break
+            if(not line): break
 
             data.extend([str.lower(word) 
                          for word in re.split(r"_|[\b\W\b]+", line)
